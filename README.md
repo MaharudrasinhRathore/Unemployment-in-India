@@ -1,4 +1,4 @@
-# PROJECT PROPOSAL: EXPLORATORY DATA ANALYSIS OF UNEMPLOYMENT IN INDIA
+# Exploratory Data Analysis of Unemployment in India
 
 ---
 
@@ -15,100 +15,126 @@
 
 ## 2. Project Definition
 
-This project is a descriptive and exploratory data analysis of the Indian labor market using Python. The objective is to systematically clean raw historical metrics and generate visualizations that illustrate how unemployment rates, employment numbers, and labor participation rates vary across regions, areas, and time.
+This project is a descriptive and exploratory data analysis of the Indian labour market using Python. It has two parts:
 
-This study is strictly descriptive. No machine learning models, statistical forecasts, or predictive algorithms are used. Any observed patterns represent empirical associations, not direct causal links.
+* **Part 1 (Data Cleaning):** turns the raw Kaggle file into a clean, validated dataset (`cleaned_data.csv`).
+* **Part 2 (Data Visualization):** uses the cleaned dataset to make 7 charts, with insights based only on the numbers printed by the code.
 
-Project success is defined by:
-1. Complete reproducibility of all cleaning routines and charts in Google Colab.
-2. Clear justification documented for every decision (handling missing data, string sanitization, and outlier treatment).
-3. Transparent documentation regarding the limitations of the data.
+This study is strictly descriptive. No machine learning models, statistical forecasts, or predictive algorithms are used. Any observed pattern is an association, not a direct cause.
 
-All findings are intended exclusively for academic purposes and must not be used for actual economic planning or policy implementation.
+All findings are for academic purposes only and must not be used for economic planning or policy decisions.
 
 ---
 
-## 3. Dataset Use Case
+## 3. Dataset
 
-The dataset provides historical employment indicators across Indian states and union territories, containing 768 entries and 7 columns prior to cleaning. Each individual row represents the estimated employment and unemployment figures for a specific region, on a specific date, within a designated area (Rural or Urban).
+The dataset has historical employment indicators for Indian states and union territories. Each row is the estimated employment and unemployment figures for one state, on one date, in one area (Rural or Urban).
 
-The dataset features the following exact columns:
-* **`Region`:** Name of the state or union territory in India (text/categorical).
-* **`Date`:** Reporting date of the survey record (originally text/object).
-* **`Frequency`:** Survey observation cadence (e.g., Monthly).
-* **`Estimated Unemployment Rate (%)`:** Estimated percentage of the active labor force that is unemployed (numeric float).
-* **`Estimated Employed`:** Estimated absolute number of employed persons (numeric float).
-* **`Estimated Labour Participation Rate (%)`:** Estimated percentage of the eligible population engaged in the labor force (numeric float).
-* **`Area`:** Geographic demographic zone, categorized as "Rural" or "Urban" (text/categorical).
+* **Raw data:** 768 rows, 7 columns
+* **Cleaned data:** 740 rows, 7 columns, no missing values
 
-This data is used to analyze structural differences in employment between rural and urban workforces, observe macro-level economic shifts over time, and compare relative labor trends across regional states.
-
----
-
-## 4. Planned Procedure
-
-1. **Loading and Inspection:** The CSV file will be loaded into pandas. Column labels will be trimmed using `.str.strip()` to remove leading/trailing whitespace present in the raw headers.
-2. **Duplicate Handling:** Duplicates will be identified using `df.duplicated().sum()` and removed via `df.drop_duplicates()` if redundant records are found.
-3. **Data Type Casting:** The `Date` column will be converted to datetime format using `pd.to_datetime(dayfirst=True)`, and numeric indicators will be verified as floating-point values.
-4. **Outlier Detection:** Outliers will be flagged using the standard Interquartile Range (IQR) rule:
-   $$\text{IQR} = Q_3 - Q_1$$
-   Points falling outside $[Q_1 - 1.5 \times \text{IQR},\; Q_3 + 1.5 \times \text{IQR}]$ will be tagged. Because rapid spikes in unemployment and wide demographic differences in total employment reflect real-world economic conditions rather than data collection errors, these records will be kept rather than clipped or dropped.
-5. **Missing Values Plan:** As shown in `df.info()`, 740 rows contain valid data, and 28 rows are completely null across all columns.
-
-| Columns | Planned Treatment | Justification |
+| Raw column | Cleaned column | Meaning |
 | :--- | :--- | :--- |
-| **All columns (completely empty rows)** | Drop via `df.dropna(how='all')` | The 28 missing entries represent fully empty trailing rows that carry no information. |
-| **`Estimated Unemployment Rate (%)`** | Median imputation (if isolated nulls remain) | Continuous skewed indicator; median avoids distortion from extreme rates. |
-| **`Estimated Employed`** | Median imputation grouped by `Region` | Employment totals scale heavily by regional population; regional grouping preserves scale. |
-| **`Estimated Labour Participation Rate (%)`** | Median imputation (if isolated nulls remain) | Stable percentage distribution where the median represents central tendency safely. |
-| **`Region` & `Area`** | Mode imputation or assign `"Unknown"` | Categorical fields; explicit classification prevents false attribution. |
-| **`Date` & `Frequency`** | Forward-fill (`ffill`) or drop invalid row | Preserves temporal consistency without fabricating arbitrary survey periods. |
+| `Region` | `state` | State or union territory |
+| `Date` | `date` | Month-end date of the record |
+| `Frequency` | `frequency` | Survey cadence (Monthly) |
+| `Estimated Unemployment Rate (%)` | `unemployment_rate_pct` | Estimated unemployment rate (%) |
+| `Estimated Employed` | `estimated_employed` | Estimated number of employed people |
+| `Estimated Labour Participation Rate (%)` | `labour_participation_rate_pct` | Estimated labour participation rate (%) |
+| `Area` | `area_type` | Rural or Urban |
+
+**Main column studied:** `unemployment_rate_pct`
 
 ---
 
-## 5. Visualizations and Planned Questions
+## 4. Part 1: Data Cleaning Procedure
 
-| Fig. | Plot Name | Type | Question It Answers |
+1. **Raw backup:** an untouched copy of the original file is saved as `raw_data.csv`.
+2. **Headers:** extra spaces are removed from the column names.
+3. **Empty rows:** the 28 rows that are completely empty are dropped (768 rows become 740). No other missing values were found, so no imputation was needed.
+4. **Renaming:** columns are renamed to snake_case names (see the table above).
+5. **Text cleaning:** extra spaces are trimmed from the text columns.
+6. **Date conversion:** `date` is converted from text to a real date (day-month-year format).
+7. **Type casting:** `estimated_employed` is converted to whole numbers (`int64`).
+8. **Sorting:** rows are sorted by date, state and area type.
+9. **Validation checks before saving:**
+   * no missing values remain
+   * unemployment rate and participation rate are between 0 and 100
+   * estimated employed is never negative
+   * no duplicate rows for the same state, area type and date
+10. **Outliers:** very high unemployment values are kept. They reflect real economic conditions and are not data errors.
+
+---
+
+## 5. Part 2: Visualizations and Results
+
+All charts are made with pandas, matplotlib and seaborn, and saved in the `plots/` folder. Every insight uses only numbers printed by the code.
+
+| # | Plot | Type | Result (from printed numbers) |
 | :---: | :--- | :--- | :--- |
-| **1** | Distribution of Unemployment Rate | Histogram with KDE | How are unemployment percentages distributed across all recorded periods, and is there skewness? |
-| **2** | Unemployment Rate by Area | Box Plot | How do median values, spreads, and extreme spikes in unemployment compare between Rural and Urban areas? |
-| **3** | Record Count by Region | Count Plot | How evenly distributed are survey records across the different states and territories? |
-| **4** | Mean Unemployment Rate by Region | Bar Chart | Which states exhibit higher or lower average estimated unemployment rates over the observation window? |
-| **5** | Unemployment Rate vs. Participation Rate | Scatter Plot | Is there an apparent correlation or pattern between labor participation rates and unemployment rates? |
-| **6** | Labour Participation Rate by Area | Box Plot | How do labor force participation levels and dispersion compare between Rural and Urban sectors? |
-| **7** | Employed Workforce Distribution by Area | Box Plot | How does the scale and dispersion of the total employed workforce differ between Rural and Urban sectors? |
+| 1 | Records per state | Count plot | 20 of 28 states have 28 records each, while Chandigarh has only 12 and Sikkim 17. |
+| 2 | Distribution of unemployment rate | Histogram | The median is 8.35% but the mean is 11.79%. 129 records are above 20%, and the highest value is 76.74%. |
+| 3 | Unemployment rate by area | Box plot | The median is 9.97% in Urban areas and 6.76% in Rural areas. |
+| 4 | Average unemployment rate by state | Bar plot | Tripura is highest (28.35%) and Meghalaya is lowest (4.80%). |
+| 5 | Average unemployment rate by month | Bar plot | The average is 10.70% in March 2020, then 23.64% in April and 24.88% in May 2020. |
+| 6 | Participation rate vs unemployment rate | Scatter plot | The correlation is 0.0, so there is no straight-line pattern. |
+| 7 | Correlation of the 3 numeric columns | Heatmap | The strongest pair is unemployment rate and estimated employed (-0.22). |
+
+### Changes from the proposal
+The 7 charts in the proposal were adjusted when the visualization part was built. The histogram has no KDE line. The two box plots for participation rate by area and employed workforce by area were replaced by the monthly bar plot (chart 5) and the correlation heatmap (chart 7).
 
 ---
 
-## 6. Expected Outcomes
-
-* **Figure 1 (Histogram):** Expected to be right-skewed, with most measurements clustering at lower-to-moderate percentages alongside an extended tail of higher values.
-* **Figure 2 (Box Plot):** Expected to show higher variability and slightly higher median unemployment rates in Urban areas relative to Rural areas.
-* **Figure 3 (Count Plot):** Expected to display uniform record frequencies across most states, highlighting any regions with missing survey intervals.
-* **Figure 4 (Bar Chart):** Expected to show regional disparities, with select northern and eastern states recording higher average unemployment figures.
-* **Figure 5 (Scatter Plot):** No strong prior assumption of a strict linear relationship; points are expected to show broad dispersion across participation brackets.
-* **Figure 6 (Box Plot):** Expected to show relatively comparable labor participation medians across both areas, with potential variation in range and spread.
-* **Figure 7 (Box Plot):** Expected to reflect higher median absolute employment figures in Rural areas due to the scale of the agrarian workforce.
-
----
-
-## 7. Work Division
+## 6. Work Division
 
 | Deliverable / Task | Maharudrasinh (IU2541231882) | Bhavya (IU2441230676) | Joint Collaboration |
 | :--- | :---: | :---: | :---: |
 | Data Loading, String Cleaning & Type Conversion | **Primary** | Review | Method sign-off |
-| Missing Value Treatment & Outlier Flagging (IQR) | **Primary** | Review | Verification of dropped rows |
+| Missing Value Treatment & Validation | **Primary** | Review | Verification of dropped rows |
 | Plot Implementations (Seaborn & Matplotlib) | Review | **Primary** | Aesthetic & layout selection |
 | GitHub Repository Management & Documentation | Review | **Primary** | Regular repository commits |
 | Scope, Limitations & Final Interpretation Synthesis | Contributor | Contributor | **Jointly Authored** |
 
 ---
 
-## 8. Python Libraries and Tools Used
+## 7. Python Libraries and Tools Used
 
-* **pandas:** Used for importing the CSV file, standardizing column strings, parsing dates, handling missing values, and generating summary tables.
-* **NumPy:** Used for vectorized numerical calculations and evaluating quartile thresholds for the IQR rule.
-* **Matplotlib (`pyplot`):** Used for base canvas styling, figure sizing, axis labels, legends, and export parameters.
-* **Seaborn:** Used for rendering statistical graphics including distribution plots, box plots, count plots, and scatter charts.
-* **Google Colab:** Used as the shared cloud runtime environment for collaborative notebook development and verification.
-* **Git & GitHub:** Used for distributed version control, tracking code modifications, and hosting the project documentation repository.
+* **pandas:** importing the CSV, cleaning columns, parsing dates, grouping and summary tables.
+* **NumPy:** numeric calculations in the cleaning script.
+* **Matplotlib (`pyplot`):** figure sizing, titles, axis labels and saving charts.
+* **Seaborn:** count plot, histogram, box plot, bar plot, scatter plot and heatmap.
+* **Google Colab:** shared cloud runtime for the notebooks.
+* **Git & GitHub:** version control and hosting the project.
+* `os` and `shutil` (built into Python) are used only to create and zip the `plots` folder.
+
+---
+
+## 8. Repository Files and How to Run
+
+| File | Description |
+| :--- | :--- |
+| `Unemployment in India.csv` | Original downloaded dataset |
+| `raw_data.csv` | Untouched backup copy of the raw data |
+| `data_cleaning.py` | Part 1 cleaning script |
+| `data_cleaning.ipynb` | Part 1 cleaning notebook |
+| `cleaned_data.csv` | Cleaned dataset (output of Part 1, input of Part 2) |
+| `unemployment_visualization.ipynb` | Part 2 Colab notebook (7 charts and insights) |
+| `plots/` | The 7 saved chart images |
+| `Unemployment_in_IND_Proposal.docx` | Project proposal |
+
+**Part 1:** run `data_cleaning.py` (or `data_cleaning.ipynb`) with `Unemployment in India.csv` in the same folder. It creates `raw_data.csv` and `cleaned_data.csv`.
+
+**Part 2:**
+1. Open `unemployment_visualization.ipynb` in Google Colab.
+2. Click **Runtime → Run all**.
+3. If the data link fails, the notebook asks you to upload `cleaned_data.csv`.
+4. The last cell zips the `plots` folder and downloads it as `plots.zip`.
+
+---
+
+## 9. Limitations
+
+* These charts show links and patterns, not causes. For example, the jump in April and May 2020 does not tell us why it happened.
+* States have different numbers of records (from 12 to 28), so state comparisons should be read carefully.
+* Correlation only measures straight-line links between columns.
+* The data covers only 14 months (May 2019 to June 2020), so long-term trends cannot be judged.
